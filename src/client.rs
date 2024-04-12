@@ -1,14 +1,19 @@
 use std::{net::{Ipv4Addr, SocketAddr}, time::Duration};
 use crate::{protocol::*, shared::*};
 use bevy::{log::LogPlugin, prelude::*};
+use bevy::log::Level;
 use lightyear::{prelude::{client::{self, *}, LinkConditionerConfig}, shared::config::Mode, transport::io::{IoConfig, TransportConfig}};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 pub fn build_client_app() -> App{
     let mut app = App::new();
-    app.add_plugins((DefaultPlugins.build().disable::<LogPlugin>(), WorldInspectorPlugin::new()));
+    app.add_plugins((DefaultPlugins.build().set(LogPlugin{
+        level: Level::INFO,
+        filter: "wgpu=error,bevy_render=info,bevy_ecs=warn".to_string(),
+        update_subscriber: None
+    }), WorldInspectorPlugin::new()));
     let client_addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 0);
-    let server_addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 5001);
+    let server_addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 5001);
     let auth = Authentication::Manual {
         server_addr,
         client_id: 0,

@@ -1,7 +1,15 @@
-use std::{net::{Ipv4Addr, SocketAddr}, time::Duration};
+use std::{
+    net::{Ipv4Addr, SocketAddr}, 
+    time::Duration
+};
 
+use bevy::log::Level;
 use bevy::{log::LogPlugin, prelude::*};
-use lightyear::{prelude::{server, LinkConditionerConfig}, shared::config::Mode, transport::io::{IoConfig, TransportConfig}};
+use lightyear::{
+    prelude::{server, LinkConditionerConfig}, 
+    shared::config::Mode, 
+    transport::io::{IoConfig, TransportConfig}
+};
 use lightyear::prelude::server::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -9,7 +17,13 @@ use crate::{protocol::*, shared::*};
 
 pub fn build_server_app() -> App {
 let mut app = App::new();
-app.add_plugins((DefaultPlugins.build().disable::<LogPlugin>(), WorldInspectorPlugin::new()));
+app.add_plugins((DefaultPlugins.build().set(LogPlugin {
+    level: Level::INFO,
+    filter: "wgpu=error,bevy_render=info,bevy_ecs=warn".to_string(),
+    update_subscriber: None,
+}), 
+    WorldInspectorPlugin::new()
+));
 
 let server_addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 5001);
 let netcode_config = NetcodeConfig::default()
@@ -20,8 +34,8 @@ let link_conditioner = LinkConditionerConfig {
     incoming_jitter: Duration::from_millis(0),
     incoming_loss: 0.00,
 };
-let io_config = IoConfig::from_transport(TransportConfig::UdpSocket(server_addr)).with_conditioner(link_conditioner);
-
+let io_config = IoConfig::from_transport(TransportConfig::UdpSocket(server_addr))
+    .with_conditioner(link_conditioner);
 let net_config = server::NetConfig::Netcode { 
     config: netcode_config, 
     io: io_config 
