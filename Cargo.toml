@@ -1,0 +1,14 @@
+[package]
+name = "bevy_online_lightyear"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.13.2"
+clap = { version = "4.4", features = ["derive"] }
+lightyear = "0.13.0"
+serde = "1.0.197"
+derive_more = { version = "0.99", features = ["add", "mul"] }
+bevy-inspector-egui = "0.23"
