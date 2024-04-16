@@ -897,6 +897,7 @@ dependencies = [
  "clap",
  "derive_more",
  "lightyear",
+ "rand",
  "serde",
 ]
 

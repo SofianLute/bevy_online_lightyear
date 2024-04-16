@@ -1,8 +1,9 @@
+use std::ops::Mul;
 use bevy::prelude::*;
-use lightyear::{channel::builder::{ChannelDirection, ChannelMode, ChannelSettings, ReliableSettings}, connection::netcode::ClientId, inputs::native::UserAction, prelude::{component_protocol, message_protocol, Channel, Message}, protocol::Protocol, *};
-use serde::*;
 use derive_more::{Add, Mul};
+use serde::{Deserialize, Serialize};
 
+use lightyear::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Direction {
@@ -10,6 +11,12 @@ pub struct Direction {
     pub(crate) down: bool,
     pub(crate) left: bool,
     pub(crate) right: bool,
+}
+
+impl Direction {
+    pub(crate) fn is_none(&self) -> bool {
+        !self.up && !self.down && !self.left && !self.right
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
@@ -35,18 +42,29 @@ pub enum Messages {
 #[derive(Component, Message, Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct PlayerId(ClientId);
 
-// `Deref` and `DerefMut` are from bevy
-// `Add` and `Mul` are from the derive_more crate
-#[derive(Component, Message, Serialize, Deserialize, Clone, Debug, PartialEq, Deref, DerefMut, Add, Mul)]
+#[derive(
+    Component, Message, Serialize, Deserialize, Clone, Debug, PartialEq, Deref, DerefMut, Add, Mul,
+)]
 pub struct PlayerPosition(Vec3);
+
+impl Mul<f32> for &PlayerPosition {
+    type Output = PlayerPosition;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        PlayerPosition(self.0 * rhs)
+    }
+}
 
 #[derive(Component, Message, Deserialize, Serialize, Clone, Debug, PartialEq)]
 pub struct PlayerColor(pub(crate) Color);
 
 #[component_protocol(protocol = "MyProtocol")]
 pub enum Components {
+    #[sync(once)]
     PlayerId(PlayerId),
+    #[sync(full)]
     PlayerPosition(PlayerPosition),
+    #[sync(once)]
     PlayerColor(PlayerColor),
 }
 
@@ -70,4 +88,22 @@ pub(crate) fn protocol() -> MyProtocol {
     ..Default::default()
     });
     protocol
+}
+
+#[derive(Bundle)]
+pub(crate) struct PLayerBundle {
+    pub id: PlayerId,
+    pub position: PlayerPosition,
+    pub color: PlayerColor,
+}
+
+impl PLayerBundle {
+    pub(crate) fn new(id: ClientId, position: Vec3) -> Self {
+        let color = Color::RED;
+        Self { 
+            id: PlayerId(id), 
+            position: PlayerPosition(position), 
+            color: PlayerColor(color)
+        }
+    }
 }

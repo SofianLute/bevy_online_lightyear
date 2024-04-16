@@ -1,17 +1,13 @@
-use std::{
-    net::{Ipv4Addr, SocketAddr}, 
-    time::Duration
-};
+use std::net::{Ipv4Addr, SocketAddr};
+use std::collections::HashMap;
 
-use bevy::log::Level;
-use bevy::{log::LogPlugin, prelude::*};
-use lightyear::{
-    prelude::{server, LinkConditionerConfig}, 
-    shared::config::Mode, 
-    transport::io::{IoConfig, TransportConfig}
-};
-use lightyear::prelude::server::*;
+use bevy::log::{Level, LogPlugin};
+use bevy::prelude::*;
+use bevy::utils::Duration;
+
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+pub use lightyear::prelude::server::*;
+use lightyear::prelude::*;
 
 use crate::{protocol::*, shared::*};
 
@@ -48,14 +44,78 @@ let server_config = ServerConfig {
 };
 let plugin_config = PluginConfig::new(server_config, protocol());
 app.add_plugins(server::ServerPlugin::new(plugin_config));
+app.add_plugins(SharedPlugin);
+app.insert_resource(Global{client_id_to_entity_id: Default::default()});
 app.add_systems(Startup, init);
+app.add_systems(Update, handle_server_connections);
+app.add_systems(FixedUpdate, movement);
 app
 }
 
-fn init(mut connections: ResMut<ServerConnections>) {
+fn init(
+    mut connections: ResMut<ServerConnections>, 
+    mut commands: Commands,
+){
     for connection in &mut connections.servers {
         let _ = connection.start().inspect_err(|e| {
             error!("Failed to start server: {:?}", e);
         });
+    }
+
+    commands.spawn(
+        TextBundle::from_section(
+            "Server",
+            TextStyle {
+                font_size: 30.0,
+                color: Color::WHITE,
+                ..default()
+            },
+        )
+        .with_style(Style {
+            align_self: AlignSelf::End,
+            ..default()
+        }),
+    );
+}
+
+#[derive(Resource)]
+pub(crate) struct Global {
+    pub client_id_to_entity_id: HashMap<ClientId, Entity>,
+}
+
+pub(crate) fn handle_server_connections(
+    mut connections: EventReader<ConnectEvent>,
+    mut global: ResMut<Global>,
+    mut commands: Commands,
+){
+    for connection in connections.read() {
+        let client_id = *connection.context();
+
+        let replicate = Replicate{
+            prediction_target: NetworkTarget::Single(client_id),
+            interpolation_target: NetworkTarget::AllExceptSingle(client_id),
+            ..default()
+        }; 
+        let entity = commands.spawn((PLayerBundle::new(client_id, Vec3::ZERO), replicate));
+        
+        // Add a mapping from client id to entity id
+         global.client_id_to_entity_id.insert(client_id, entity.id());
+    }
+}
+
+fn movement(
+    mut position_query: Query<&mut PlayerPosition>,
+    mut input_reader: EventReader<InputEvent<Inputs>>,
+    global: Res<Global>,
+) {
+    for input in input_reader.read() {
+        let client_id = input.context();
+        if let Some(input) = input.input() {
+            if let Some(player_entity) = global.client_id_to_entity_id.get(client_id) {
+                if let Ok(position) = position_query.get_mut(*player_entity) {
+                    shared_movement_behaviour(position, input);
+                }
+            }
+        }
     }
 }

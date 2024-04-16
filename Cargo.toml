@@ -12,3 +12,4 @@ lightyear = "0.13.0"
 serde = "1.0.197"
 derive_more = { version = "0.99", features = ["add", "mul"] }
 bevy-inspector-egui = "0.23"
+rand = "0.8.5"
