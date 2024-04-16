@@ -109,7 +109,7 @@ pub(crate) fn handle_connections(
 }
 
 pub(crate) fn update_player_mesh_position(
-    player: Query<(&PlayerPosition, &PlayerId), With<Confirmed>>,
+    player: Query<(&PlayerPosition, &PlayerId)>,
     mut player_mesh: Query<&mut Transform, With<PlayerMesh>>,
     my_player_id: Res<MyPlayerID>,
 ){
