@@ -11,15 +11,10 @@ pub struct SharedPlugin;
 
 impl Plugin for SharedPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, shared_init);
         app.add_systems(Update, draw_boxes);
     }
 }
 
-
-pub(crate) fn shared_init(mut commands: Commands){
-    commands.spawn(Camera2dBundle::default());
-}
 
 pub fn shared_config(mode: Mode) -> SharedConfig {
     SharedConfig {
@@ -58,11 +53,9 @@ pub(crate) fn draw_boxes(
     players: Query<(&PlayerPosition, &PlayerColor)>,
 ) {
     for (position, color) in &players {
-        gizmos.rect(
-            Vec3::new(position.x, position.y, 0.0),
-            Quat::IDENTITY,
-            Vec2::ONE * 50.0,
-            color.0,
-        );
+        gizmos.cuboid(
+        Transform::from_translation(Vec3::new(position.x, position.y, 0.0)).with_scale(Vec3::splat(2.0)),
+        color.0
+        )
     }
 }

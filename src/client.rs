@@ -52,8 +52,14 @@ pub fn build_client_app() -> App{
 
 fn init(
     mut client: ResMut<ClientConnection>,
+    mut commands: Commands,
 ) {
     client.connect().expect("failed to connect to server");
+
+    commands.spawn(Camera3dBundle{
+        transform: Transform::from_xyz(0.0, 20.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
 }
 
 
