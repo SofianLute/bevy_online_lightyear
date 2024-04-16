@@ -40,7 +40,7 @@ pub enum Messages {
 
 
 #[derive(Component, Message, Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct PlayerId(ClientId);
+pub struct PlayerId(pub ClientId);
 
 #[derive(
     Component, Message, Serialize, Deserialize, Clone, Debug, PartialEq, Deref, DerefMut, Add, Mul,
