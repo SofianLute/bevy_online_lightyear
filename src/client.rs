@@ -1,10 +1,11 @@
-use std::{net::{Ipv4Addr, SocketAddr}, time::{Duration, SystemTime}};
+use std::{net::{IpAddr, Ipv4Addr, SocketAddr}, time::{Duration, SystemTime}};
 use crate::{protocol::{Direction, *}, shared::*};
 use bevy::{log::LogPlugin, prelude::*};
 use bevy::log::Level;
 use lightyear::prelude::*;
 use lightyear::prelude::client::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use local_ip_address::local_ip;
 
 pub fn build_client_app() -> App{
     let mut app = App::new();
@@ -14,9 +15,11 @@ pub fn build_client_app() -> App{
         update_subscriber: None
     }), WorldInspectorPlugin::new()));
     
+    let my_local_ip = local_ip().unwrap();
+    println!("This is my local IP address: {:?}", my_local_ip);
     let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
-    let client_addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 0);
-    let server_addr = SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 5001);
+    let client_addr = SocketAddr::new(my_local_ip, 0);
+    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 183)), 5001);
     let auth = Authentication::Manual {
         server_addr,
         client_id: current_time.as_millis() as u64,

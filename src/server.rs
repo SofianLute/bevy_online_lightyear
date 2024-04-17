@@ -1,4 +1,4 @@
-use std::net::{Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::collections::HashMap;
 
 use bevy::log::{Level, LogPlugin};
@@ -9,6 +9,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 pub use lightyear::prelude::server::*;
 use lightyear::prelude::*;
 use rand::{thread_rng, Rng};
+use local_ip_address::local_ip;
 
 use crate::{protocol::*, shared::*};
 
@@ -21,8 +22,8 @@ app.add_plugins((DefaultPlugins.build().set(LogPlugin {
 }), 
     WorldInspectorPlugin::new()
 ));
-
-let server_addr = SocketAddr::new(Ipv4Addr::UNSPECIFIED.into(), 5001);
+let server_local_ip = local_ip().unwrap();
+let server_addr = SocketAddr::new(server_local_ip, 5001);
 let netcode_config = NetcodeConfig::default()
     .with_protocol_id(PROTOCOL_ID)
     .with_key(KEY);
