@@ -8,6 +8,7 @@ use bevy::utils::Duration;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 pub use lightyear::prelude::server::*;
 use lightyear::prelude::*;
+use rand::{thread_rng, Rng};
 
 use crate::{protocol::*, shared::*};
 
@@ -46,8 +47,9 @@ let plugin_config = PluginConfig::new(server_config, protocol());
 app.add_plugins(server::ServerPlugin::new(plugin_config));
 app.add_plugins(SharedPlugin);
 app.insert_resource(Global{client_id_to_entity_id: Default::default()});
+app.insert_resource(PlayerScore{scores: Default::default()});
 app.add_systems(Startup, init);
-app.add_systems(Update, handle_server_connections);
+app.add_systems(Update, (handle_server_connections, player_collision));
 app.add_systems(FixedUpdate, movement);
 app
 }
@@ -61,11 +63,6 @@ fn init(
             error!("Failed to start server: {:?}", e);
         });
     }
-
-    commands.spawn(Camera3dBundle{
-        transform: Transform::from_xyz(0.0, 50.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
 
     commands.spawn(
         TextBundle::from_section(
@@ -81,6 +78,12 @@ fn init(
             ..default()
         }),
     );
+
+    commands.spawn((
+        CoinBundle::new(Vec2::new(thread_rng().gen_range(0..200) as f32, thread_rng().gen_range(0..200) as f32)),
+        Name::new("Coin"),
+        Replicate::default()
+    ));
 }
 
 #[derive(Resource)]
@@ -88,9 +91,15 @@ pub(crate) struct Global {
     pub client_id_to_entity_id: HashMap<ClientId, Entity>,
 }
 
+#[derive(Resource)]
+pub(crate) struct PlayerScore {
+    pub scores: HashMap<PlayerId, u32>,
+}
+
 pub(crate) fn handle_server_connections(
     mut connections: EventReader<ConnectEvent>,
     mut global: ResMut<Global>,
+    mut player_score: ResMut<PlayerScore>,
     mut commands: Commands,
 ){
     for connection in connections.read() {
@@ -101,14 +110,15 @@ pub(crate) fn handle_server_connections(
             interpolation_target: NetworkTarget::AllExceptSingle(client_id),
             ..default()
         }; 
-        let entity = commands.spawn((
-            PLayerBundle::new(client_id, Vec3::ZERO), 
+        let player_entity = commands.spawn((
+            PLayerBundle::new(client_id, Vec2::ZERO), 
             replicate,
             Name::new("Player")
         ));
         
+        player_score.scores.insert(PlayerId(client_id), 0);
         // Add a mapping from client id to entity id
-         global.client_id_to_entity_id.insert(client_id, entity.id());
+         global.client_id_to_entity_id.insert(client_id, player_entity.id());
     }
 }
 
@@ -124,6 +134,31 @@ fn movement(
                 if let Ok(position) = position_query.get_mut(*player_entity) {
                     shared_movement_behaviour(position, input);
                 }
+            }
+        }
+    }
+}
+
+pub(crate) fn player_collision(
+    players: Query<(&PlayerPosition, &PlayerId)>,
+    coins: Query<(Entity, &CoinPosition)>,
+    mut commands: Commands,
+    mut player_score: ResMut<PlayerScore>
+){
+    for (player_position,player_id) in &players {
+        for (coin_entity, coin_position) in &coins {
+            let distance = player_position.distance(**coin_position);
+            if distance < COIN_RADIUS + PLAYER_RADIUS {
+                commands.entity(coin_entity).despawn();
+                let new_player_score = player_score.scores.get(player_id).unwrap() + 1;
+
+                player_score.scores.insert(player_id.clone(), new_player_score);
+                println!("player scores: {:#?}", player_score.scores);
+                commands.spawn((
+                    CoinBundle::new(Vec2::new(thread_rng().gen_range(0..400) as f32, thread_rng().gen_range(0..400) as f32)),
+                    Name::new("Coin"),
+                    Replicate::default()
+                ));
             }
         }
     }

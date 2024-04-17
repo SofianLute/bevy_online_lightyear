@@ -44,37 +44,17 @@ pub fn build_client_app() -> App{
     let plugin_config = PluginConfig::new(client_config, protocol());
     app.add_plugins(client::ClientPlugin::new(plugin_config));
     app.add_plugins(SharedPlugin);
-    app.init_resource::<MyPlayerID>();
     app.add_systems(Startup, init);
     app.add_systems(FixedPreUpdate, buffer_input.in_set(InputSystemSet::BufferInputs));
-    app.add_systems(Update, (handle_connections, handle_predicted_spawn, handle_interpolated_spawn, update_player_mesh_position));
+    app.add_systems(Update, (handle_connections, handle_predicted_spawn, handle_interpolated_spawn));
     app.add_systems(FixedUpdate, player_movement);
     app
 }
 
 fn init(
     mut client: ResMut<ClientConnection>,
-    mut commands: Commands,
 ) {
     client.connect().expect("failed to connect to server");
-
-    commands.spawn(Camera3dBundle{
-        transform: Transform::from_xyz(0.0, 20.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
-}
-
-#[derive(Resource)]
-pub struct MyPlayerID{
-    pub my_player_id: PlayerId,
-}
-
-impl Default for MyPlayerID {
-    fn default() -> Self {
-        Self{
-            my_player_id: PlayerId(ClientId::Netcode(0)),
-        }
-    }
 }
 
 #[derive(Component)]
@@ -84,13 +64,9 @@ pub struct PlayerMesh;
 pub(crate) fn handle_connections(
     mut connections: EventReader<ConnectEvent>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut my_player_id: ResMut<MyPlayerID>,
 ) {
     for connection in connections.read() {
         let client_id = connection.client_id();
-        my_player_id.my_player_id = PlayerId(client_id);
         commands.spawn(TextBundle::from_section(
             format!("Client {}", client_id),
             TextStyle {
@@ -99,26 +75,6 @@ pub(crate) fn handle_connections(
                 ..default()
             },
         ));
-        commands.spawn((PbrBundle{
-            mesh: meshes.add(Cuboid::new(2.0, 2.0, 2.0)),
-            material: materials.add(Color::BLUE),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-            ..default()
-        }, PlayerMesh));
-    }
-}
-
-pub(crate) fn update_player_mesh_position(
-    player: Query<(&PlayerPosition, &PlayerId)>,
-    mut player_mesh: Query<&mut Transform, With<PlayerMesh>>,
-    my_player_id: Res<MyPlayerID>,
-){
-    if let Ok(mut player_mesh_transform) = player_mesh.get_single_mut(){
-        for (player_position, player_id) in &player {
-            if my_player_id.my_player_id == *player_id{
-                player_mesh_transform.translation = Vec3::new(player_position.x, player_position.y, player_position.z);
-            }
-        }
     }
 }
 
