@@ -199,7 +199,7 @@ pub(crate) fn receive_message1(
 ){
     for event in reader.read(){
         for mut scorebord in &mut scorebord_query{
-            info!("Player scores are: {:#?}", event.message());
+            info!("Player scores are: {:?}", event.message());
             scorebord.sections[0].value = format!("Scorebord: {:#?}", event.message());
         }
     }
