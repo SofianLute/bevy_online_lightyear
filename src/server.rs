@@ -144,7 +144,8 @@ pub(crate) fn player_collision(
     players: Query<(&PlayerPosition, &PlayerId)>,
     coins: Query<(Entity, &CoinPosition)>,
     mut commands: Commands,
-    mut player_score: ResMut<PlayerScore>
+    mut player_score: ResMut<PlayerScore>,
+    mut server: ResMut<ServerConnectionManager>
 ){
     for (player_position,player_id) in &players {
         for (coin_entity, coin_position) in &coins {
@@ -160,6 +161,11 @@ pub(crate) fn player_collision(
                     Name::new("Coin"),
                     Replicate::default()
                 ));
+                server
+                    .send_message_to_target::<Channel1, Message1>(Message1(player_score.scores.clone()), NetworkTarget::All)
+                    .unwrap_or_else(|e| {
+                        error!("Failed to send message: {:?}", e);
+                    });
             }
         }
     }

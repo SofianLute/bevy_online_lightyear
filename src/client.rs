@@ -19,7 +19,7 @@ pub fn build_client_app() -> App{
     println!("This is my local IP address: {:?}", my_local_ip);
     let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let client_addr = SocketAddr::new(my_local_ip, 0);
-    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 183)), 5001);
+    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 21)), 5001);
     let auth = Authentication::Manual {
         server_addr,
         client_id: current_time.as_millis() as u64,
@@ -47,9 +47,9 @@ pub fn build_client_app() -> App{
     let plugin_config = PluginConfig::new(client_config, protocol());
     app.add_plugins(client::ClientPlugin::new(plugin_config));
     app.add_plugins(SharedPlugin);
-    app.add_systems(Startup, init);
+    app.add_systems(Startup, (init, scorebord));
     app.add_systems(FixedPreUpdate, buffer_input.in_set(InputSystemSet::BufferInputs));
-    app.add_systems(Update, (handle_connections, handle_predicted_spawn, handle_interpolated_spawn));
+    app.add_systems(Update, (handle_connections, handle_predicted_spawn, handle_interpolated_spawn, receive_message1));
     app.add_systems(FixedUpdate, player_movement);
     app
 }
@@ -67,12 +67,14 @@ pub struct PlayerMesh;
 pub(crate) fn handle_connections(
     mut connections: EventReader<ConnectEvent>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>
 ) {
     for connection in connections.read() {
         let client_id = connection.client_id();
         commands.spawn(TextBundle::from_section(
             format!("Client {}", client_id),
             TextStyle {
+                font: asset_server.load("FiraSans-Bold.ttf"),
                 font_size: 30.0,
                 color: Color::WHITE,
                 ..default()
@@ -138,5 +140,67 @@ pub(crate) fn handle_interpolated_spawn(
 ){
     for mut color in interpolated.iter_mut(){
         color.0.set_g(1.0);
+    }
+}
+
+#[derive(Component)]
+pub struct Scorebord;
+
+pub fn scorebord (
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
+){
+    commands.spawn((NodeBundle {
+        style: Style{
+            width: Val::Percent(20.0),
+            height: Val::Percent(100.0),
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            row_gap: Val::Percent(5.0),
+            ..default()
+        },
+        //background_color: Color::RED.into(),
+        ..default()
+    },
+    Name::new("HudNode"),
+)).with_children(|parent| {
+    parent.spawn(NodeBundle{
+        style: Style{
+            width: Val::Percent(100.0),
+            height: Val::Percent(5.0),
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::Center,
+            row_gap: Val::Percent(5.0),
+            ..default()
+        },
+        //background_color: Color::BLACK.into(),
+        ..default()
+    });
+    
+    parent.spawn((TextBundle{
+        text: Text::from_section(
+                "Scorebord: ",
+                 TextStyle { 
+                    font: asset_server.load("FiraSans-Bold.ttf"), 
+                    font_size: 32.0, 
+                    color: Color::WHITE 
+                },
+             ),
+        ..default()},
+        Scorebord,
+        Name::new("scorebord")
+        ));
+    });
+}
+
+pub(crate) fn receive_message1(
+    mut reader: EventReader<MessageEvent<Message1>>,
+    mut scorebord_query: Query<&mut Text, With<Scorebord>>
+){
+    for event in reader.read(){
+        for mut scorebord in &mut scorebord_query{
+            info!("Player scores are: {:#?}", event.message());
+            scorebord.sections[0].value = format!("Scorebord: {:#?}", event.message());
+        }
     }
 }

@@ -1,4 +1,4 @@
-use std::ops::Mul;
+use std::{collections::HashMap, ops::Mul};
 use bevy::prelude::*;
 use derive_more::{Add, Mul};
 use serde::{Deserialize, Serialize};
@@ -32,7 +32,7 @@ impl UserAction for Inputs {}
 
 // Message
 #[derive(Message, Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct Message1(pub usize);
+pub struct Message1(pub HashMap<PlayerId, u32>);
 
 #[message_protocol(protocol = "MyProtocol")]
 pub enum Messages {
