@@ -19,7 +19,7 @@ pub fn build_client_app() -> App{
     println!("This is my local IP address: {:?}", my_local_ip);
     let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let client_addr = SocketAddr::new(my_local_ip, 0);
-    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 21)), 5001);
+    let server_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 183)), 5001);
     let auth = Authentication::Manual {
         server_addr,
         client_id: current_time.as_millis() as u64,
