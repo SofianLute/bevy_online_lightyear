@@ -67,7 +67,6 @@ pub struct PlayerMesh;
 pub(crate) fn handle_connections(
     mut connections: EventReader<ConnectEvent>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>
 ) {
     for connection in connections.read() {
         let client_id = connection.client_id();
@@ -147,7 +146,6 @@ pub struct Scorebord;
 
 pub fn scorebord (
     mut commands: Commands,
-    asset_server: Res<AssetServer>
 ){
     commands.spawn((NodeBundle {
         style: Style{
