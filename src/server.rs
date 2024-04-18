@@ -28,7 +28,7 @@ let netcode_config = NetcodeConfig::default()
     .with_protocol_id(PROTOCOL_ID)
     .with_key(KEY);
 let link_conditioner = LinkConditionerConfig {
-    incoming_latency: Duration::from_millis(100),
+    incoming_latency: Duration::from_millis(0),
     incoming_jitter: Duration::from_millis(0),
     incoming_loss: 0.00,
 };

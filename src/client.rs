@@ -29,7 +29,7 @@ pub fn build_client_app() -> App{
 
     // You can add a link conditioner to simulate network conditions
     let link_conditioner = LinkConditionerConfig {
-    incoming_latency: Duration::from_millis(100),
+    incoming_latency: Duration::from_millis(0),
     incoming_jitter: Duration::from_millis(0),
     incoming_loss: 0.00,
     };
