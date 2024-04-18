@@ -74,7 +74,6 @@ pub(crate) fn handle_connections(
         commands.spawn(TextBundle::from_section(
             format!("Client {}", client_id),
             TextStyle {
-                font: asset_server.load("FiraSans-Bold.ttf"),
                 font_size: 30.0,
                 color: Color::WHITE,
                 ..default()
@@ -181,9 +180,9 @@ pub fn scorebord (
         text: Text::from_section(
                 "Scorebord: ",
                  TextStyle { 
-                    font: asset_server.load("FiraSans-Bold.ttf"), 
                     font_size: 32.0, 
-                    color: Color::WHITE 
+                    color: Color::WHITE, 
+                    ..default()
                 },
              ),
         ..default()},
@@ -200,7 +199,8 @@ pub(crate) fn receive_message1(
     for event in reader.read(){
         for mut scorebord in &mut scorebord_query{
             info!("Player scores are: {:?}", event.message());
-            scorebord.sections[0].value = format!("Scorebord: {:#?}", event.message());
+            let scorebord_text = &event.message().0;
+            scorebord.sections[0].value = format!("Scorebord: {:#?}", scorebord_text);
         }
     }
 }
