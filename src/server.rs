@@ -38,7 +38,6 @@ let server_config = ServerConfig {
 };
 let plugin_config = PluginConfig::new(server_config, protocol());
 app.add_plugins(server::ServerPlugin::new(plugin_config));
-app.add_plugins(SharedPlugin);
 app.insert_resource(Global{client_id_to_entity_id: Default::default()});
 app.insert_resource(PlayerScore{scores: Default::default()});
 app.add_systems(Startup, init);
