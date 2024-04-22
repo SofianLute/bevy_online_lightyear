@@ -47,6 +47,7 @@ pub fn build_client_app() -> App{
     let plugin_config = PluginConfig::new(client_config, protocol());
     app.add_plugins(client::ClientPlugin::new(plugin_config));
     app.add_plugins(SharedPlugin);
+    app.init_resource::<MyPlayerID>();
     app.add_systems(Startup, (init, scorebord));
     app.add_systems(FixedPreUpdate, buffer_input.in_set(InputSystemSet::BufferInputs));
     app.add_systems(Update, (handle_connections, handle_predicted_spawn, handle_interpolated_spawn, receive_message1));
@@ -60,6 +61,19 @@ fn init(
     client.connect().expect("failed to connect to server");
 }
 
+#[derive(Resource)]
+pub struct MyPlayerID{
+    pub my_player_id: PlayerId,
+}
+
+impl Default for MyPlayerID {
+    fn default() -> Self {
+        Self{
+            my_player_id: PlayerId(ClientId::Netcode(0)),
+        }
+    }
+}
+
 #[derive(Component)]
 pub struct PlayerMesh;
 
@@ -67,9 +81,11 @@ pub struct PlayerMesh;
 pub(crate) fn handle_connections(
     mut connections: EventReader<ConnectEvent>,
     mut commands: Commands,
+    mut my_player_id: ResMut<MyPlayerID>,
 ) {
     for connection in connections.read() {
         let client_id = connection.client_id();
+        my_player_id.my_player_id = PlayerId(client_id);
         commands.spawn(TextBundle::from_section(
             format!("Client {}", client_id),
             TextStyle {
@@ -192,12 +208,13 @@ pub fn scorebord (
 
 pub(crate) fn receive_message1(
     mut reader: EventReader<MessageEvent<Message1>>,
-    mut scorebord_query: Query<&mut Text, With<Scorebord>>
+    mut scorebord_query: Query<&mut Text, With<Scorebord>>,
+    my_player_id: Res<MyPlayerID>
 ){
     for event in reader.read(){
         for mut scorebord in &mut scorebord_query{
-            info!("Player scores are: {:?}", event.message());
-            let scorebord_text = &event.message().0;
+            let player_score = &event.message().0;
+            let scorebord_text = player_score.get(&my_player_id.my_player_id);
             scorebord.sections[0].value = format!("Scorebord: {:#?}", scorebord_text);
         }
     }
