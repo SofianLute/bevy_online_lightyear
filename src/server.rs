@@ -1,11 +1,9 @@
 use std::net::SocketAddr;
 use std::collections::HashMap;
 
-use bevy::log::{Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::utils::Duration;
 
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 pub use lightyear::prelude::server::*;
 use lightyear::prelude::*;
 use rand::{thread_rng, Rng};
