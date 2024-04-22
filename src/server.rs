@@ -15,13 +15,7 @@ use crate::{protocol::*, shared::*};
 
 pub fn build_server_app() -> App {
 let mut app = App::new();
-app.add_plugins((DefaultPlugins.build().set(LogPlugin {
-    level: Level::INFO,
-    filter: "wgpu=error,bevy_render=info,bevy_ecs=warn".to_string(),
-    update_subscriber: None,
-}), 
-    WorldInspectorPlugin::new()
-));
+app.add_plugins(MinimalPlugins);
 let server_local_ip = local_ip().unwrap();
 let server_addr = SocketAddr::new(server_local_ip, 5001);
 let netcode_config = NetcodeConfig::default()
