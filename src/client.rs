@@ -192,7 +192,7 @@ pub fn scorebord (
     
     parent.spawn((TextBundle{
         text: Text::from_section(
-                "Scorebord: ",
+                "Scoreboard: ",
                  TextStyle { 
                     font_size: 32.0, 
                     color: Color::WHITE, 
@@ -201,7 +201,7 @@ pub fn scorebord (
              ),
         ..default()},
         Scorebord,
-        Name::new("scorebord")
+        Name::new("scoreboard")
         ));
     });
 }
@@ -215,7 +215,7 @@ pub(crate) fn receive_message1(
         for mut scorebord in &mut scorebord_query{
             let player_score = &event.message().0;
             let scorebord_text = player_score.get(&my_player_id.my_player_id);
-            scorebord.sections[0].value = format!("Scorebord: {:#?}", scorebord_text);
+            scorebord.sections[0].value = format!("Scoreboard: {:#?}", scorebord_text);
         }
     }
 }
